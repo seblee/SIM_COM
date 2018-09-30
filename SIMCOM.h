@@ -8,7 +8,22 @@
 *************************************************************************************************************/
 #ifndef _SIMCOM_H_
 #define _SIMCOM_H_
-#include "system.h"
+//#include "system.h"
+#include <rtthread.h>
+#include <string.h>
+#include <stdlib.h>
+typedef rt_uint8_t u8;
+typedef rt_int8_t s8;
+typedef rt_uint16_t u16;
+typedef rt_uint32_t u32;
+typedef rt_bool_t bool;
+
+enum
+{
+    FALSE,
+    TRUE,
+};
+#define uart_printf rt_kprintf
 
 //SIMCOM通信模块定义
 typedef enum

@@ -8,8 +8,8 @@
 *************************************************************************************************************/
 #ifndef _SIMCOM_SUER_H_
 #define _SIMCOM_SUER_H_
-#include "system.h"
-#include "simcom.h"
+//#include "system.h"
+#include "SIMCOM.h"
 
 //SIMCOM 初始化错误
 typedef enum

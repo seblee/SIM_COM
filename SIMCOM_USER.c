@@ -6,10 +6,10 @@
  * 最后修改时间:	2018-03-23
  * 详细:			
 *************************************************************************************************************/
-#include "system.h"
-#include "usart.h"
+//#include "system.h"
+//#include "usart.h"
 #include "string.h"
-#include "ucos_ii.h"
+//#include "ucos_ii.h"
 #include "SIMCOM_USER.h"
 #include "SIMCOM_GSM.h"
 #include "SIMCOM_GPRS.h"
@@ -21,7 +21,7 @@ bool g_SIMC0M_USER_Debug = TRUE; //应用层指令调试状态
 //调试开关
 #define SIMCOM_USER_DBUG 1
 #if SIMCOM_USER_DBUG
-#include "system.h"
+//#include "system.h"
 #define SIMCOM_USER_debug(format, ...)          \
     {                                           \
         if (g_SIMC0M_USER_Debug)                \

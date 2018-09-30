@@ -8,8 +8,8 @@
 *************************************************************************************************************/
 #ifndef _SIMCOM_GSM_H_
 #define _SIMCOM_GSM_H_
-#include "system.h"
-#include "simcom.h"
+//#include "system.h"
+#include "SIMCOM.h"
 
 bool SIMCOM_NetworkConfig(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, NETWORK_CONFIG_TYPE *pConfig); //SIMCOM网络配置
 SIM_CARD_STATUS SIMCOM_GetCPIN(SIMCOM_HANDLE *pHandle);                                                     //获取SIM卡状态

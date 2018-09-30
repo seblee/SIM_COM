@@ -6,8 +6,8 @@
  * 最后修改时间:	2018-03-23
  * 详细:			
 *************************************************************************************************************/
-#include "system.h"
-#include "usart.h"
+//#include "system.h"
+//#include "usart.h"
 #include "SIMCOM_GSM.h"
 #include "SIMCOM_AT.h"
 #include "string.h"
@@ -19,7 +19,7 @@ bool g_SIMC0M_GSM_Debug = TRUE; //底层AT指令调试状态
 //调试开关
 #define SIMCOM_GSM_DBUG 1
 #if SIMCOM_GSM_DBUG
-#include "system.h"
+//#include "system.h"
 #define SIMCOM_GSM_debug(format, ...)           \
     {                                           \
         if (g_SIMC0M_GSM_Debug)                 \

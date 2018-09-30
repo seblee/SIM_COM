@@ -7,8 +7,8 @@
  * 详细:			
 *************************************************************************************************************/
 #ifndef _SIMCOM_AT_H_
-#define _SIMCOM_AT_H_
-#include "system.h"
+#define _SIMCOM_AT_H_ #include <rtthread.h>
+//#include "system.h"
 #include "SIMCOM.h"
 
 extern bool g_SIMC0M_AT_Debug; //底层AT指令调试状态

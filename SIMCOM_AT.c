@@ -6,19 +6,19 @@
  * 最后修改时间:	2018-03-23
  * 详细:			
 *************************************************************************************************************/
-#include "system.h"
-#include "usart.h"
+//#include "system.h"
+//#include "usart.h"
 #include "SIMCOM_AT.h"
 #include "SIMCOM.h"
 #include "string.h"
-#include "ucos_ii.h"
+//#include "ucos_ii.h"
 
 bool g_SIMC0M_AT_Debug = TRUE; //底层AT指令调试状态
 
 //调试开关
 #define SIMCOM_DBUG 1
 #if SIMCOM_DBUG
-#include "system.h"
+//#include "system.h"
 #define SIMCOM_debug(format, ...)               \
     {                                           \
         if (g_SIMC0M_AT_Debug)                  \
