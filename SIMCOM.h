@@ -12,19 +12,21 @@
 #include <rtthread.h>
 #include <string.h>
 #include <stdlib.h>
-typedef rt_uint8_t u8;
-typedef rt_int8_t s8;
-typedef rt_uint16_t u16;
-typedef rt_uint32_t u32;
+#include "board.h"
+
 typedef rt_bool_t bool;
 
-enum
-{
-    FALSE,
-    TRUE,
-};
-#define uart_printf rt_kprintf
+#ifndef FALSE
+#define FALSE 0
+#endif /* FALSE */
+#ifndef TRUE
+#define TRUE 1
+#endif /* TRUE */
 
+#pragma diag_suppress 870
+#ifndef uart_printf
+#define uart_printf(format, ...) rt_kprintf(format, ##__VA_ARGS__)
+#endif /* uart_printf(...) */
 //SIMCOM通信模块定义
 typedef enum
 {

@@ -15,22 +15,16 @@
 #include <stdlib.h>
 
 bool g_SIMC0M_GSM_Debug = TRUE; //底层AT指令调试状态
-
 //调试开关
-#define SIMCOM_GSM_DBUG 1
-#if SIMCOM_GSM_DBUG
-//#include "system.h"
-#define SIMCOM_GSM_debug(format, ...)           \
-    {                                           \
-        if (g_SIMC0M_GSM_Debug)                 \
-        {                                       \
-            uart_printf(format, ##__VA_ARGS__); \
-        }                                       \
-    }
+#define SIMCOM_DBUG 1
+#if SIMCOM_DBUG
+
+#ifndef SIMCOM_GSM_debug
+#define SIMCOM_GSM_debug(format, ...) rt_kprintf("####[SIMCOM_AT %s:%4d] " format "\r\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#endif /* SIMCOM_GSM_debug(...) */
 #else
-#define SIMCOM_GSM_debug(format, ...) /\
-/
-#endif                                //SIMCOM_GSM_DBUG
+#define SIMCOM_GSM_debug(format, ...)
+#endif
 
 /*************************************************************************************************************************
 * 函数			:	bool SIMCOM_NetworkConfig(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, SIMCOM_SIM_SELECT SIM_Select)
@@ -69,12 +63,12 @@ bool SIMCOM_NetworkConfig(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, NET
             {
             case CAT_M_MODE: //CAT模式
             {
-                sprintf(buff, "AT+CMNB=%d", 1); //cat模式
+                rt_sprintf(buff, "AT+CMNB=%d", 1); //cat模式
             }
             break;
             default:
             {
-                sprintf(buff, "AT+CMNB=%d", 2); //NBIOT模式
+                rt_sprintf(buff, "AT+CMNB=%d", 2); //NBIOT模式
             }
             break;
             }
@@ -83,11 +77,11 @@ bool SIMCOM_NetworkConfig(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, NET
             //扰码设置
             if (pConfig->isNB_ScarEnable) //开启扰码
             {
-                sprintf(buff, "AT+NBSC=%d", 1);
+                rt_sprintf(buff, "AT+NBSC=%d", 1);
             }
             else
             {
-                sprintf(buff, "AT+NBSC=%d", 0);
+                rt_sprintf(buff, "AT+NBSC=%d", 0);
             }
             if (SIMCOM_SetParametersReturnBool(pHandle, buff, SIMCOM_DEFAULT_RETRY, 200, "\r\n设置SIM7000C NB 扰码模式失败!\r\n") == FALSE)
                 return FALSE;
@@ -170,6 +164,7 @@ SIMCOM_NETSTATUS SIM900_GetGSMNetworkStatus(SIMCOM_HANDLE *pHandle)
     char *p;
     u8 retry = SIMCOM_DEFAULT_RETRY; //重试次数
     u8 *pData;
+    SIMCOM_NETSTATUS status;
 
     do
     {
@@ -181,8 +176,9 @@ SIMCOM_NETSTATUS SIM900_GetGSMNetworkStatus(SIMCOM_HANDLE *pHandle)
             p = strstr((const char *)pData, "+CREG:"); //搜索字符"+CREG:"
             if (p != NULL)                             //搜索成功
             {
+                status = (SIMCOM_NETSTATUS)GSM_StringToDec(&p[9], 1);
                 SIMCOM_TestAT(pHandle, 1);
-                return (SIMCOM_NETSTATUS)GSM_StringToDec(&p[9], 1);
+                return status;
             }
             break;
         }
@@ -259,7 +255,7 @@ bool SIM900_SetGPRS_PackDatatSize(SIMCOM_HANDLE *pHandle)
 
     //设置GPRS传输数据包大小
     //AT+CIPCCFG=3,2,1024,1 //设置透传参数 //3-重传次数为3次,2-等待数据输入时间为 //2*200ms,1024-数据缓冲区为1024个字节 //1-支持转义退出透传
-    sprintf(buff, "AT+CIPCCFG=3,2,%d,1", 1460);
+    rt_sprintf(buff, "AT+CIPCCFG=3,2,%d,1", 1460);
     return SIMCOM_SetParametersReturnBool(pHandle, buff, SIMCOM_DEFAULT_RETRY, 200, "GPRS发送数据缓冲区设置失败!\r\n"); //发送
 }
 
@@ -278,7 +274,8 @@ bool SIMCOM_ModuleInit(SIMCOM_HANDLE *pHandle)
 {
     u8 retry = 5; //重试次数
 
-    pHandle->pSetDTR_Pin(SIMCOM_L_LEVEL); //DTR=0,退出低功耗模式
+    if (pHandle->pSetDTR_Pin != NULL)
+        pHandle->pSetDTR_Pin(SIMCOM_L_LEVEL); //DTR=0,退出低功耗模式
     //检测模块存在,并保证通信正常
     SIMCOM_Ready(pHandle);
     SIMCOM_TestAT(pHandle, 20);
@@ -335,6 +332,7 @@ bool SIMCOM_ModuleInit(SIMCOM_HANDLE *pHandle)
     {
         if (SIMCOM_GetCPIN(pHandle) == SIM_READY)
         {
+            uart_printf("\r\nSIM \r\n");
             uart_printf("\r\nSIM卡准备就绪!\r\n");
             break;
         }
@@ -788,10 +786,10 @@ SIMCOM_NETMODE_TYPE SIM7XXX_GetNetworkMode(SIMCOM_HANDLE *pHandle)
 bool SIMCOM_HardwarePowerUP(SIMCOM_HANDLE *pHandle, bool isTest)
 {
     u8 i, j;
-
-    pHandle->pSetDTR_Pin(SIMCOM_L_LEVEL); //DTR=0,退出低功耗模式
-    pHandle->s_isInitStatus = FALSE;      //模块没有初始化,需要重新初始化
-    if (isTest)                           //需要检测是否开机成功
+    if (pHandle->pSetDTR_Pin != NULL)
+        pHandle->pSetDTR_Pin(SIMCOM_L_LEVEL); //DTR=0,退出低功耗模式
+    pHandle->s_isInitStatus = FALSE;          //模块没有初始化,需要重新初始化
+    if (isTest)                               //需要检测是否开机成功
     {
         if (pHandle->pGetSTATUS_Pin() == SIMCOM_H_LEVEL) //开机脚已经是高电平了
         {
@@ -886,11 +884,38 @@ bool SIMCOM_HardwarePowerDOWN(SIMCOM_HANDLE *pHandle, bool isTest)
         pHandle->pSetPWRKEY_Pin(SIMCOM_L_LEVEL); //拉低1200ms关机
         pHandle->pDelayMS(1200);
         pHandle->pSetPWRKEY_Pin(SIMCOM_H_LEVEL); //恢复高电平
-        pHandle->pDelayMS(3000);
-        ; //延时3S等待关机完毕
+        pHandle->pDelayMS(3000);                 //延时3S等待关机完毕
 
         return TRUE;
     }
+}
+/**
+ ****************************************************************************
+ * @Function : bool SIMCPM_RESET_ME(SIMCOM_HANDLE *pHandle)
+ * @File     : SIMCOM_GSM.c
+ * @Program  : none
+ * @Created  : 2018-10-08 by seblee
+ * @Brief    : RESET MODEL
+ * @Version  : V1.0
+**/
+bool SIMCPM_RESET_ME(SIMCOM_HANDLE *pHandle)
+{
+    u32 cnt;
+    u8 *pData;
+
+    pHandle->s_isInitStatus = FALSE;
+    SIMCOM_SendAT(pHandle, "AT+CFUN=1,1");
+    pHandle->pClearRxData();                                                    //清除接收计数器
+    if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 10, 200)) //等待响应,超时200MS
+    {
+        pHandle->pDelayMS(100);
+    }
+    SIMCOM_Ready(pHandle); //等待就绪
+    pHandle->pDelayMS(1200);
+    SIMCOM_Wait_AT(pHandle, 20);
+    if (SIMCOM_TestAT(pHandle, 5) == FALSE)
+
+        return TRUE;
 }
 
 /*************************************************************************************************************************
@@ -1129,7 +1154,7 @@ bool SIMCOM_GetBookNumber(SIMCOM_HANDLE *pHandle, u8 index, char pPhoneNumber[16
     do
     {
         //+CPBR: 1,"152778787878",129,"Phone"
-        sprintf(buff, "AT+CPBR=%d", index);
+        rt_sprintf(buff, "AT+CPBR=%d", index);
         SIMCOM_SendAT(pHandle, buff);                                               //发送"AT+CPBR=1",获取号码
         pHandle->pClearRxData();                                                    //清除接收计数器
         if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 30, 600)) //等待响应,超时600MS

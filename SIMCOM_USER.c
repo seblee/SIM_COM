@@ -12,9 +12,13 @@
 //#include "ucos_ii.h"
 #include "SIMCOM_USER.h"
 #include "SIMCOM_GSM.h"
-#include "SIMCOM_GPRS.h"
+//#include "SIMCOM_GPRS.h"
 #include "SIMCOM_AT.h"
 #include "SIMCOM.h"
+
+#ifndef DEBUG
+#define DEBUG(N, ...) rt_kprintf("####[DEBUG %s:%4d] " N "\r\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#endif /* DEBUG(...) */
 
 bool g_SIMC0M_USER_Debug = TRUE; //应用层指令调试状态
 
@@ -22,17 +26,10 @@ bool g_SIMC0M_USER_Debug = TRUE; //应用层指令调试状态
 #define SIMCOM_USER_DBUG 1
 #if SIMCOM_USER_DBUG
 //#include "system.h"
-#define SIMCOM_USER_debug(format, ...)          \
-    {                                           \
-        if (g_SIMC0M_USER_Debug)                \
-        {                                       \
-            uart_printf(format, ##__VA_ARGS__); \
-        }                                       \
-    }
+#define SIMCOM_USER_debug DEBUG
 #else
-#define SIMCOM_USER_debug(format, ...) /\
-/
-#endif                                 //SIMCOM_USER_DBUG
+#define SIMCOM_USER_debug(format, ...)
+#endif //SIMCOM_USER_DBUG
 
 const char *const SIMCOM_NETWORK_NAME[18] = {
     "未注册",
@@ -98,7 +95,7 @@ bool SIMCOM_Init(SIMCOM_HANDLE *pHandle,
 {
     if (pHandle == NULL)
     {
-        DEBUG("无效的句柄！\r\n");
+        DEBUG("unusable handle!\r\n");
         return FALSE;
     }
     //所需变量
@@ -125,8 +122,10 @@ bool SIMCOM_Init(SIMCOM_HANDLE *pHandle,
     if (pHandle->pSendData == NULL || pHandle->pReadData == NULL || pHandle->pClearRxData == NULL || pHandle->pSetDTR_Pin == NULL || pHandle->pSetPWRKEY_Pin == NULL ||
         pHandle->pGetSTATUS_Pin == NULL || pHandle->pGetDCD_Pin == NULL || pHandle->pDelayMS == NULL)
     {
-        DEBUG("错误，有回调接口为空！\r\n");
-        return FALSE;
+        DEBUG("有回调接口为空！\r\n");
+        if (pHandle->pSendData == NULL || pHandle->pReadData == NULL || pHandle->pClearRxData == NULL ||
+            pHandle->pDelayMS == NULL)
+            return FALSE;
     }
 
     return TRUE;
@@ -231,39 +230,49 @@ SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 Net
     u8 SIM_NotReadyCnt = 0; //SIM卡未准备就绪计数器
 
     Retry += 1; //重试次数至少1次
+    SIMCOM_USER_debug("[SIMCOM]:start RegisNetwork\r\n");
     //模块上电
     for (pcnt = 0; pcnt < Retry; pcnt++) //上电循环
     {
         SIM_NotReadyCnt = 0; //SIM卡未准备就绪计数器复位
         if (pHandle->pIWDG_Feed != NULL)
             pHandle->pIWDG_Feed(); //喂狗
-
-        if (pHandle->pGetSTATUS_Pin() == SIMCOM_L_LEVEL) //模块没有上电
+        if (pHandle->pGetSTATUS_Pin != NULL)
         {
-            pHandle->s_isInitStatus = FALSE; //模块没有初始化
-            SIMCOM_USER_debug("[SIMCOM]:模块没有上电!\r\n");
-            if (SIMCOM_HardwarePowerUP(pHandle, TRUE) == TRUE) //上电
+            if (pHandle->pGetSTATUS_Pin() == SIMCOM_L_LEVEL) //模块没有上电
             {
-                SIMCOM_USER_debug("[SIMCOM]:开机成功!\r\n");
-                if (SIMCOM_TestAT(pHandle, 50) != TRUE) //发送AT测试命令
+                pHandle->s_isInitStatus = FALSE; //模块没有初始化
+                SIMCOM_USER_debug("[SIMCOM]:模块没有上电!\r\n");
+                if (SIMCOM_HardwarePowerUP(pHandle, TRUE) == TRUE) //上电
+                {
+                    SIMCOM_USER_debug("[SIMCOM]:开机成功!\r\n");
+                    if (SIMCOM_TestAT(pHandle, 50) != TRUE) //发送AT测试命令
+                    {
+                        if (pModeInof != NULL)
+                            *pModeInof = "模块未知";
+                        SIMCOM_USER_debug("[SIMCOM]:通信错误,串口错误!\r\n");
+                    }
+                }
+                else
                 {
                     if (pModeInof != NULL)
                         *pModeInof = "模块未知";
-                    SIMCOM_USER_debug("[SIMCOM]:通信错误,串口错误!\r\n");
+                    SIMCOM_USER_debug("[SIMCOM]:开机失败!\r\n");
+                    Error = SIMCOM_POWER_UP_ERROR; //开机失败
                 }
             }
-            else
-            {
-                if (pModeInof != NULL)
-                    *pModeInof = "模块未知";
-                SIMCOM_USER_debug("[SIMCOM]:开机失败!\r\n");
-                Error = SIMCOM_POWER_UP_ERROR; //开机失败
-            }
         }
+        SIMCOM_USER_debug("[DTU]SIMCOM_TestAT\r\n");
+        do
+        {
+        } while ((SIMCOM_TestAT(pHandle, 50) != TRUE));
 
         //上电完毕后初始化模块
+        if (pHandle->pGetSTATUS_Pin == NULL)
+            goto model_init;
         if (pHandle->pGetSTATUS_Pin() == SIMCOM_H_LEVEL)
         {
+        model_init:
             //模块初始化网络
             if (NetworkDelay == 0)
                 NetworkDelay = 0xffff;                      //为0,一直等待
@@ -282,7 +291,6 @@ SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 Net
             {
                 pHandle->SimcomModeType = ModeType; //上电初始化设置通信模块型号
             }
-
             //根据模块类型进行初始化，如果是SIM7000C，需要选择工作在GSM模式还是NBIOT模式
             if (SIMCOM_NetworkConfig(pHandle, ModeType, &pHandle->NetworkConfig) == FALSE)
             {
@@ -292,11 +300,14 @@ SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 Net
             //初始化获取网络信息
             for (cnt = 0; cnt < NetworkDelay; cnt++)
             {
-                if (pHandle->pGetSTATUS_Pin() == SIMCOM_L_LEVEL)
+                if (pHandle->pGetSTATUS_Pin != NULL)
                 {
-                    Error = SIMCOM_POWER_UP_ERROR; //异常断电
-                    uart_printf("[DTU]异常断电了,请检查供电是否稳定!\r\n");
-                    break; //模块没有上电,初始化
+                    if (pHandle->pGetSTATUS_Pin() == SIMCOM_L_LEVEL)
+                    {
+                        Error = SIMCOM_POWER_UP_ERROR; //异常断电
+                        uart_printf("[DTU]异常断电了,请检查供电是否稳定!\r\n");
+                        break; //模块没有上电,初始化
+                    }
                 }
 
                 if (ModeType == SIMCOM_INVALID)
@@ -369,10 +380,11 @@ SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 Net
                     //获取模块信息
                     if (SIMCOM_GetModuleInfo(pHandle, &pHandle->SIMCOM_Info) == TRUE) //获取模块的相关信息
                     {
-                        SIMCOM_USER_debug("\r\n制造商:%s\r\n", pHandle->SIMCOM_Info.Manu);
-                        SIMCOM_USER_debug("模块型号:%s\r\n", pHandle->SIMCOM_Info.Model);
-                        SIMCOM_USER_debug("软件版本:%s\r\n", pHandle->SIMCOM_Info.Ver);
-                        SIMCOM_USER_debug("模块序列号:%s\r\n", pHandle->SIMCOM_Info.IMEI);
+                        SIMCOM_USER_debug("打印模块信息!\r\n");
+                        uart_printf("\r\n制造商:%s\r\n", pHandle->SIMCOM_Info.Manu);
+                        uart_printf("模块型号:%s\r\n", pHandle->SIMCOM_Info.Model);
+                        uart_printf("软件版本:%s\r\n", pHandle->SIMCOM_Info.Ver);
+                        uart_printf("模块序列号:%s\r\n", pHandle->SIMCOM_Info.IMEI);
                     }
                     else
                     {
@@ -435,22 +447,23 @@ SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 Net
                     if (isCart == TRUE)
                         Error = SIMCOM_REG_ERROR; //卡初始化成功了，才返回初注册失败
                     SIMCOM_USER_debug("[DTU]模块重启!\r\n");
-                    if (SIMCOM_HardwarePowerDOWN(pHandle, TRUE) == FALSE)
-                    {
-                        SIMCOM_USER_debug("[DTU]:关机失败!\r\n");
-                    }
+                    SIMCPM_RESET_ME(pHandle);
+                    // if (SIMCOM_HardwarePowerDOWN(pHandle, TRUE) == FALSE)
+                    // {
+                    //     SIMCOM_USER_debug("[DTU]:关机失败!\r\n");
+                    // }
                     break;
                 }
 
                 //SIM卡未就绪次数过多
                 if (SIM_NotReadyCnt > 16)
                 {
-
                     uart_printf("[DTU]:多次检测到卡未就绪!模块重启!\r\n");
-                    if (SIMCOM_HardwarePowerDOWN(pHandle, TRUE) == FALSE)
-                    {
-                        SIMCOM_USER_debug("[DTU]:关机失败!\r\n");
-                    }
+                    SIMCPM_RESET_ME(pHandle);
+                    // if (SIMCOM_HardwarePowerDOWN(pHandle, TRUE) == FALSE)
+                    // {
+                    //     SIMCOM_USER_debug("[DTU]:关机失败!\r\n");
+                    // }
                     break;
                 }
 
@@ -495,6 +508,7 @@ SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 Net
         uart_printf("[DTU]:模块注册网络出错（超时）!\r\n");
     }
     break;
+
     case SIMCOM_INIT_ERROR: //初始化配置错误
     {
         uart_printf("[DTU]:模块初始化配置出错!\r\n");

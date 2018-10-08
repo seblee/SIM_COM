@@ -11,6 +11,15 @@
 //#include "system.h"
 #include "SIMCOM.h"
 
+#define SIMCOM_Wait_AT(pHandle, times) \
+    do                                 \
+    {                                  \
+        u32 count_wait;                \
+        if (count_wait++ > times)      \
+            break;                     \
+        pHandle->pDelayMS(100);        \
+    } while (SIMCOM_TestAT(pHandle, 5) == FALSE)
+
 bool SIMCOM_NetworkConfig(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, NETWORK_CONFIG_TYPE *pConfig); //SIMCOM网络配置
 SIM_CARD_STATUS SIMCOM_GetCPIN(SIMCOM_HANDLE *pHandle);                                                     //获取SIM卡状态
 SIMCOM_NETSTATUS SIM900_GetGSMNetworkStatus(SIMCOM_HANDLE *pHandle);                                        //获取GSM网络注册状态
@@ -21,6 +30,7 @@ bool SIMCOM_COPS(SIMCOM_HANDLE *pHandle, char pCOPS_Buff[SIMCOM_INFO_SIZE]);    
 SIMCOM_NETMODE_TYPE SIM7XXX_GetNetworkMode(SIMCOM_HANDLE *pHandle);                                         //获取SIM7XXX系列模块网络制式
 bool SIMCOM_HardwarePowerUP(SIMCOM_HANDLE *pHandle, bool isTest);                                           //SIMCOM模块硬件开机
 bool SIMCOM_HardwarePowerDOWN(SIMCOM_HANDLE *pHandle, bool isTest);                                         //SIMCOM模块硬件关机
+bool SIMCPM_RESET_ME(SIMCOM_HANDLE *pHandle);                                                               //SIMCOM模块软复位
 SIMCOM_MODE_TYPE SIMCOM_GetMode(SIMCOM_HANDLE *pHandle);                                                    //获取SIMCOM模块的型号
 int SIMCOM_GetSignal(SIMCOM_HANDLE *pHandle);                                                               //获取信号强度
 bool SIMCOM_GetBookNumber(SIMCOM_HANDLE *pHandle, u8 index, char pPhoneNumber[16]);                         //从电话簿获取一个电话号码(不能用于SIM7000)

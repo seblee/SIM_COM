@@ -14,8 +14,7 @@
 //SIMCOM 初始化错误
 typedef enum
 {
-    SIMCOM_INIT_OK = 0, //初始化成功
-
+    SIMCOM_INIT_OK = 0,        //初始化成功
     SIMCOM_POWER_UP_ERROR = 1, //上电错误
     SIMCOM_REG_ERROR = 2,      //注册出错（超时）
     SIMCOM_INIT_ERROR = 3,     //初始化配置错误

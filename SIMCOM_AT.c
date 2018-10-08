@@ -13,23 +13,18 @@
 #include "string.h"
 //#include "ucos_ii.h"
 
-bool g_SIMC0M_AT_Debug = TRUE; //底层AT指令调试状态
-
 //调试开关
 #define SIMCOM_DBUG 1
 #if SIMCOM_DBUG
-//#include "system.h"
-#define SIMCOM_debug(format, ...)               \
-    {                                           \
-        if (g_SIMC0M_AT_Debug)                  \
-        {                                       \
-            uart_printf(format, ##__VA_ARGS__); \
-        }                                       \
-    }
+
+#ifndef SIMCOM_debug
+#define SIMCOM_debug(format, ...) rt_kprintf("####[SIMCOM_AT %s:%4d] " format "\r\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#endif /* SIMCOM_debug(...) */
+
 #else
-#define SIMCOM_debug(format, ...) /\
-/
-#endif                            //SIMCOM_DBUG
+
+#define SIMCOM_debug(N, ...)
+#endif
 
 /*************************************************************************************************************************
 * 函数				:	bool SIMCOM_SendAT(SIMCOM_HANDLE *pHandle, char *pStr)
@@ -99,8 +94,9 @@ bool SIMCOM_WaitSleep(SIMCOM_HANDLE *pHandle, u32 TimeOutMs)
     u8 *pData;
 
     if (TimeOutMs < 100)
-        TimeOutMs = 100;                  //最少100ms
-    pHandle->pSetDTR_Pin(SIMCOM_H_LEVEL); //等待模块空闲后进入SLEEP模式
+        TimeOutMs = 100; //最少100ms
+    if (pHandle->pSetDTR_Pin != NULL)
+        pHandle->pSetDTR_Pin(SIMCOM_H_LEVEL); //等待模块空闲后进入SLEEP模式
 
     //循环发送命令，直到命令超时了则认为进入了sleep模式
     for (i = 0; i < (TimeOutMs / 100); i++)
@@ -113,7 +109,8 @@ bool SIMCOM_WaitSleep(SIMCOM_HANDLE *pHandle, u32 TimeOutMs)
             break;
         }
     }
-    pHandle->pSetDTR_Pin(SIMCOM_L_LEVEL); //唤醒
+    if (pHandle->pSetDTR_Pin != NULL)
+        pHandle->pSetDTR_Pin(SIMCOM_L_LEVEL); //唤醒
 
     if (i == (TimeOutMs / 100))
     {
