@@ -114,6 +114,13 @@ typedef enum
     CAT_M_MODE = 1,  //CAT-M模式
 } NBIOT_MODE_TYPE;
 
+//模块传输状态
+typedef enum
+{
+    COMMAND_MODE = 0, //AT命令模式
+    DATA_MODE = 1,    //透传模式
+} TRANS_MODE_TYPE;
+
 //网络模式设置
 typedef struct
 {
@@ -150,6 +157,7 @@ typedef struct
     void (*pIWDG_Feed)(void); //清除系统看门狗(可以为空)
     //内部状态定义
     bool s_isInitStatus; //用于记录模块初始化状态，复位或上电后变为无效
+    TRANS_MODE_TYPE TransMode;
 } SIMCOM_HANDLE;
 
 #endif /*_SIMCOM_H_*/
