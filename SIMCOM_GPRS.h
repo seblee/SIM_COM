@@ -28,6 +28,13 @@
 /* Private function prototypes -----------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
+bool SIMCOM_CCHSTART(SIMCOM_HANDLE *pHandle);
+
+bool SIMCOM_CCH(SIMCOM_HANDLE *pHandle, const char *host, int port);
+
+bool SIMCOM_IPADDR(SIMCOM_HANDLE *pHandle);
+
+bool SIMCOM_CIPNETWORK(SIMCOM_HANDLE *pHandle, bool Transparent_mode, const char *host, int port);
 
 /*----------------------------------------------------------------------------*/
 

@@ -321,7 +321,7 @@ bool SIMCOM_ModuleInit(SIMCOM_HANDLE *pHandle)
     //	}
 
     //设置模块sleep模式使能//发送"AT+CSCLK",启动SLEEP模式;0:关闭;1:手动;2:自动空闲5S钟后休眠
-    if (SIMCOM_SetParametersReturnBool(pHandle, "AT+CSCLK=1", SIMCOM_DEFAULT_RETRY, 110, "\r\n设置SLEEP失败!\r\n") == FALSE)
+    if (SIMCOM_SetParametersReturnBool(pHandle, "AT+CSCLK=0", SIMCOM_DEFAULT_RETRY, 110, "\r\n设置SLEEP失败!\r\n") == FALSE)
     {
         return FALSE;
     }
@@ -406,25 +406,25 @@ bool SIMCOM_ModuleInit(SIMCOM_HANDLE *pHandle)
     case SIMCOM_SIM7600:
     {
         //设置TCP收发相关
-        retry = SIMCOM_DEFAULT_RETRY; //重试次数
-        while (retry)
-        {
-            //设置重试次数为3次，并且发送延时为120ms
-            if (SIMCOM_SetParametersReturnBool(pHandle, "AT+CIPCCFG=3,100,,1,0,,1000", SIMCOM_DEFAULT_RETRY, 110, "\r\n配置TCP/IP失败!\r\n") == FALSE)
-            {
-                //return FALSE;
-            }
-            else
-                break;
-            pHandle->pDelayMS(1000); //延时1秒
-            retry--;
-        }
-        if (retry == 0)
-        {
-            uart_printf("\r\n设置TCP重发次数以及发送延时失败!\r\n");
-            pHandle->pClearRxData(); //清除接收计数器
-            return FALSE;
-        }
+        // retry = SIMCOM_DEFAULT_RETRY; //重试次数
+        // while (retry)
+        // {
+        //     //设置重试次数为3次，并且发送延时为120ms
+        //     if (SIMCOM_SetParametersReturnBool(pHandle, "AT+CIPCCFG=3,100,,1,0,,1000", SIMCOM_DEFAULT_RETRY, 110, "\r\n配置TCP/IP失败!\r\n") == FALSE)
+        //     {
+        //         //return FALSE;
+        //     }
+        //     else
+        //         break;
+        //     pHandle->pDelayMS(1000); //延时1秒
+        //     retry--;
+        // }
+        // if (retry == 0)
+        // {
+        //     uart_printf("\r\n设置TCP重发次数以及发送延时失败!\r\n");
+        //     pHandle->pClearRxData(); //清除接收计数器
+        //     return FALSE;
+        // }
         //设置不用等到发送响应
         retry = SIMCOM_DEFAULT_RETRY; //重试次数
         while (retry)
@@ -486,6 +486,7 @@ bool SIMCOM_ModuleInit(SIMCOM_HANDLE *pHandle)
             pHandle->pClearRxData(); //清除接收计数器
             return FALSE;
         }
+        SIMCOM_SetParametersReturnBool(pHandle, "AT+CIPMODE=1", SIMCOM_DEFAULT_RETRY, 2000, "开启透传模式失败!\r\n"); //开启透传模式
     }
     break;
     default: //2G模块均需要进行设置的
@@ -914,8 +915,9 @@ bool SIMCPM_RESET_ME(SIMCOM_HANDLE *pHandle)
     pHandle->pDelayMS(1200);
     SIMCOM_Wait_AT(pHandle, 20);
     if (SIMCOM_TestAT(pHandle, 5) == FALSE)
-
         return TRUE;
+    else
+        return FALSE;
 }
 
 /*************************************************************************************************************************
