@@ -256,3 +256,101 @@ bool SIMCOM_CIPNETWORK(SIMCOM_HANDLE *pHandle, bool Transparent_mode, const char
     result = FALSE;
     return result;
 }
+
+/**
+ ****************************************************************************
+ * @Function : bool SIMCOM_CHTTPSSTART(SIMCOM_HANDLE *pHandle)
+ * @File     : SIMCOM_GPRS.c
+ * @Program  : handle
+ * @Created  : 2018-10-18 by seblee
+ * @Brief    : Acquire HTTPS stack
+ * @Version  : V1.0
+**/
+bool SIMCOM_CHTTPSSTART(SIMCOM_HANDLE *pHandle)
+{
+    u32 cnt;
+    char *p;
+    u8 retry = SIMCOM_DEFAULT_RETRY; //重试次数
+    u8 *pData;
+    int status;
+
+    do
+    {
+        //+CHTTPSSTART: 0
+        SIMCOM_SendAT(pHandle, "AT+CHTTPSSTART");                                   //发送"AT+CGREG?",获取网络注册状态
+        pHandle->pClearRxData();                                                    //清除接收计数器
+        if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 20, 200)) //等待响应,超时200MS
+        {
+            //+CHTTPSSTART: 0
+            p = strstr((const char *)pData, "+CHTTPSSTART: "); //搜索字符"+CHTTPSSTART:"
+            if (p != NULL)                                     //搜索成功
+            {
+                status = GSM_StringToDec(&p[rt_strlen("+CHTTPSSTART: ")], 1);
+                SIMCOM_TestAT(pHandle, 1);
+                if (status == 0)
+                    return TRUE;
+            }
+            break;
+        }
+
+        SIMCOM_Ready(pHandle);   //等待就绪
+        pHandle->pDelayMS(1000); //失败延时1秒后重试
+        retry--;
+    } while (retry);
+
+    SIMCOM_TestAT(pHandle, 2);
+    return SIMCOM_NET_ERROR;
+}
+
+/**
+ ****************************************************************************
+ * @Function : bool SIMCOM_COMMAND_ACK(SIMCOM_HANDLE *pHandle, const char *AT_command,
+ *                                     const char *pKeyword, const char *pParaword, int *err)
+ * @File     : SIMCOM_GPRS.c
+ * @Program  : pHandle:module info handle
+ *             AT_command:the command to send
+ *             pKeyword:back key word
+ *             pParaword:back Para key word
+ * @Created  : 2018-10-18 by seblee
+ * @Brief    : send cmd back ok like this below
+ * [OK]
+ * []
+ * [+CNETSTART: <err>]
+ * @Version  : V1.0
+**/
+bool SIMCOM_COMMAND_ACK(SIMCOM_HANDLE *pHandle, const char *AT_command,
+                        const char *pKeyword, const char *pParaword, int *err)
+{
+    u32 cnt;
+    char *p;
+    u8 retry = SIMCOM_DEFAULT_RETRY; //重试次数
+    u8 *pData;
+
+    do
+    {
+        //+CHTTPSSTART: 0
+        SIMCOM_SendAT(pHandle, AT_command);                                             //发送"AT+CGREG?",获取网络注册状态
+        pHandle->pClearRxData();                                                        //清除接收计数器
+        if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, pKeyword, 20, 200)) //等待响应,超时200MS
+        {
+            //+CHTTPSSTART: 0
+            if (pParaword)
+            {
+                p = strstr((const char *)pData, pParaword); //搜索字符"+CHTTPSSTART:"
+                if (p != NULL)                              //搜索成功
+                {
+                    *err = GSM_StringToDec(&p[rt_strlen(pParaword)], 1);
+                    SIMCOM_TestAT(pHandle, 1);
+                }
+            }
+            return TRUE;
+        }
+
+        SIMCOM_Ready(pHandle);   //等待就绪
+        pHandle->pDelayMS(1000); //失败延时1秒后重试
+        retry--;
+    } while (retry);
+
+    SIMCOM_TestAT(pHandle, 2);
+    return FALSE;
+}

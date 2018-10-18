@@ -1,10 +1,10 @@
 /*************************************************************************************************************
- * 文件名:			SIMCOM_USER.c
- * 功能:			SIMCOM用户层函数
- * 作者:			cp1300@139.com
- * 创建时间:		2015-02-15
- * 最后修改时间:	2018-03-23
- * 详细:			
+ * 文件名:          SIMCOM_USER.c
+ * 功能:            SIMCOM用户层函数
+ * 作者:            cp1300@139.com
+ * 创建时间:        2015-02-15
+ * 最后修改时间:    2018-03-23
+ * 详细:            
 *************************************************************************************************************/
 //#include "system.h"
 //#include "usart.h"
@@ -53,33 +53,33 @@ const char *const SIMCOM_NETWORK_NAME[18] = {
 };
 
 /*************************************************************************************************************************
-* 函数				:	bool SIMCOM_Init(SIMCOM_HANDLE *pHandle,
-							bool (* pSendData)(u8 *pDataBuff, u16 DataLen),											
-							int (* pReadData)(u8 **pDataBuff, u8 ByteTimeOutMs, u16 TimeOutMs, u16 *pReceiveDelay),	
-							void (*pClearRxData)(void),																
-							void (*pSetDTR_Pin)(u8 Level),															
-							void (*pSetPWRKEY_Pin)(u8 Level),														
-							u8 (*pGetSTATUS_Pin)(void),	
-							u8 (*pGetDCD_Pin)(void),
-							void (*pDelayMS)(u32 ms),																
-							void (*pIWDG_Feed)(void)
-* 功能				:	初始化SIMCOM句柄接口
-* 参数				:	pSl651_Handle:句柄；
-						pSendCallBack：发送回调函数（pDataBuff：发送数据缓冲区，DataLen：发送数据长度）
-						pReadCallBack：接收数据回调函数，会等待直到数据被写入到接收缓冲区（pDataBuff:接收数据缓冲区，ByteTimeOut：等待的字节超时时间，单位ms,TimeOut:数据包超时时间，单位ms）
-						pClearRxData:清除接收缓冲区函数，用于清除接收数据缓冲区数据
-						pSetDTR_Pin:DTR引脚电平控制-用于控制sleep模式或者退出透传模式
-						pSetPWRKEY_Pin:PWRKEY开机引脚电平控制-用于开机
-						pGetSTATUS_Pin:获取STATUS引脚电平-用于指示模块上电状态
-						pGetDCD_Pin:获取DCD引脚电平-高电平AT指令模式，低电平为透传模式
-						pDelayMS:系统延时函数
-						pIWDG_Feed:清除系统看门狗(可以为空)
-* 返回				:	无
-* 依赖				:	TRUE:成功，FALSE:失败
-* 作者				:	cp1300@139.com
-* 时间				:	2018-03-24
-* 最后修改时间 		: 	2018-03-24
-* 说明				: 	除pIWDG_Feed接口可以为空，其余接口均不能为空，否则程序会崩溃
+* 函数              :   bool SIMCOM_Init(SIMCOM_HANDLE *pHandle,
+                            bool (* pSendData)(u8 *pDataBuff, u16 DataLen),                                         
+                            int (* pReadData)(u8 **pDataBuff, u8 ByteTimeOutMs, u16 TimeOutMs, u16 *pReceiveDelay), 
+                            void (*pClearRxData)(void),                                                             
+                            void (*pSetDTR_Pin)(u8 Level),                                                            
+                            void (*pSetPWRKEY_Pin)(u8 Level),                                                       
+                            u8 (*pGetSTATUS_Pin)(void), 
+                            u8 (*pGetDCD_Pin)(void),
+                            void (*pDelayMS)(u32 ms),                                                               
+                            void (*pIWDG_Feed)(void)
+* 功能              :   初始化SIMCOM句柄接口
+* 参数              :   pSl651_Handle:句柄；
+                        pSendCallBack：发送回调函数（pDataBuff：发送数据缓冲区，DataLen：发送数据长度）
+                        pReadCallBack：接收数据回调函数，会等待直到数据被写入到接收缓冲区（pDataBuff:接收数据缓冲区，ByteTimeOut：等待的字节超时时间，单位ms,TimeOut:数据包超时时间，单位ms）
+                        pClearRxData:清除接收缓冲区函数，用于清除接收数据缓冲区数据
+                        pSetDTR_Pin:DTR引脚电平控制-用于控制sleep模式或者退出透传模式
+                        pSetPWRKEY_Pin:PWRKEY开机引脚电平控制-用于开机
+                        pGetSTATUS_Pin:获取STATUS引脚电平-用于指示模块上电状态
+                        pGetDCD_Pin:获取DCD引脚电平-高电平AT指令模式，低电平为透传模式
+                        pDelayMS:系统延时函数
+                        pIWDG_Feed:清除系统看门狗(可以为空)
+* 返回              :   无
+* 依赖              :   TRUE:成功，FALSE:失败
+* 作者              :   cp1300@139.com
+* 时间              :   2018-03-24
+* 最后修改时间      :   2018-03-24
+* 说明              :   除pIWDG_Feed接口可以为空，其余接口均不能为空，否则程序会崩溃
 *************************************************************************************************************************/
 bool SIMCOM_Init(SIMCOM_HANDLE *pHandle,
                  bool (*pSendData)(u8 *pDataBuff, u16 DataLen),                                         //发送数据接口，如果发送失败，返回FALSE,成功返回TRUE;
@@ -132,15 +132,15 @@ bool SIMCOM_Init(SIMCOM_HANDLE *pHandle,
 }
 
 /*************************************************************************************************************************
-* 函数			:	void SIMCOM_PrintfModel(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, const char **pModeInof)
-* 功能			:	显示并打印模块型号
-* 参数			:	pHandle：句柄；ModeType：模块型号；pModeInof:返回模块型号信息(不需要可以为空)
-* 返回			:	无
-* 依赖			:	底层
-* 作者			:	cp1300@139.com
-* 时间			:	2017-10-17
-* 最后修改时间	: 	2018-03-24
-* 说明			: 	
+* 函数          :   void SIMCOM_PrintfModel(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, const char **pModeInof)
+* 功能          :   显示并打印模块型号
+* 参数          :   pHandle：句柄；ModeType：模块型号；pModeInof:返回模块型号信息(不需要可以为空)
+* 返回          :   无
+* 依赖          :   底层
+* 作者          :   cp1300@139.com
+* 时间          :   2017-10-17
+* 最后修改时间  :   2018-03-24
+* 说明          :   
 *************************************************************************************************************************/
 void SIMCOM_PrintfModel(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, const char **pModeInof)
 {
@@ -207,15 +207,15 @@ void SIMCOM_PrintfModel(SIMCOM_HANDLE *pHandle, SIMCOM_MODE_TYPE ModeType, const
 }
 
 /*************************************************************************************************************************
-* 函数			:	SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 NetworkDelay,const char **pModeInof)
-* 功能			:	SIMCOM模块上电初始化并注册网络
-* 参数			:	pHandle：句柄；Retry:初始化重试次数>0;NetworkDelay:注册网络延时时间,单位S;pModeInof:返回模块型号信息(不需要可以为空)
-* 返回			:	SIMCOM_USER_ERROR	
-* 依赖			:	底层
-* 作者			:	cp1300@139.com
-* 时间			:	2014-08-18
-* 最后修改时间	: 	2018-03-24
-* 说明			: 	用于通信模块上电并初始化操作		
+* 函数          :   SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 NetworkDelay,const char **pModeInof)
+* 功能          :   SIMCOM模块上电初始化并注册网络
+* 参数          :   pHandle：句柄；Retry:初始化重试次数>0;NetworkDelay:注册网络延时时间,单位S;pModeInof:返回模块型号信息(不需要可以为空)
+* 返回          :   SIMCOM_USER_ERROR   
+* 依赖          :   底层
+* 作者          :   cp1300@139.com
+* 时间          :   2014-08-18
+* 最后修改时间  :   2018-03-24
+* 说明          :   用于通信模块上电并初始化操作        
 *************************************************************************************************************************/
 SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 NetworkDelay, const char **pModeInof)
 {
@@ -530,22 +530,22 @@ SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 Net
 }
 
 /*************************************************************************************************************************
-* 函数			:	bool SIMCOM_PhoneMessageNumberInitialize(SIMCOM_HANDLE *pHandle, u8 retry)
-* 功能			:	SIMCOM 初始化获取短信中心号码以及本机号码,信号强度,CIMI（结果存放在句柄pHandle中）
-* 参数			:	pHandle:句柄；Retry:初始化重试次数>0
-* 返回			:	TRUE成功,FALSE:失败	
-* 依赖			:	底层
-* 作者			:	cp1300@139.com
-* 时间			:	2014-08-18
-* 最后修改时间	: 	2018-03-24
-* 说明			: 	用于网络初始化之后进行初始化获取相关信息,需要提前初始化网络模块型号以及网络制式
-					短信中心号码存放在:pHandle->ServiceCenterPhoneNumber;	
-					电话号码存放在:pHandle->LocalPhoneNumber;	
-					信号强度存放在:pHandle->Singal；
-					SIM卡CIMI号码存放在pHandle->SIM_CIMI；
-					2016-06-15:SIM2000C使用电信SIM卡时,过快读取本机号码会失败,增加延时,确保读取成功
-					2016-11-16:增加获取短信中心号码延时
-					2017-12-05:NBIO 模块不读取电话号码
+* 函数          :   bool SIMCOM_PhoneMessageNumberInitialize(SIMCOM_HANDLE *pHandle, u8 retry)
+* 功能          :   SIMCOM 初始化获取短信中心号码以及本机号码,信号强度,CIMI（结果存放在句柄pHandle中）
+* 参数          :   pHandle:句柄；Retry:初始化重试次数>0
+* 返回          :   TRUE成功,FALSE:失败 
+* 依赖          :   底层
+* 作者          :   cp1300@139.com
+* 时间          :   2014-08-18
+* 最后修改时间  :   2018-03-24
+* 说明          :   用于网络初始化之后进行初始化获取相关信息,需要提前初始化网络模块型号以及网络制式
+                    短信中心号码存放在:pHandle->ServiceCenterPhoneNumber;   
+                    电话号码存放在:pHandle->LocalPhoneNumber;   
+                    信号强度存放在:pHandle->Singal；
+                    SIM卡CIMI号码存放在pHandle->SIM_CIMI；
+                    2016-06-15:SIM2000C使用电信SIM卡时,过快读取本机号码会失败,增加延时,确保读取成功
+                    2016-11-16:增加获取短信中心号码延时
+                    2017-12-05:NBIO 模块不读取电话号码
 *************************************************************************************************************************/
 bool SIMCOM_PhoneMessageNumberInitialize(SIMCOM_HANDLE *pHandle, u8 retry)
 {
@@ -728,4 +728,106 @@ bool SIMCOM_PhoneMessageNumberInitialize(SIMCOM_HANDLE *pHandle, u8 retry)
         return FALSE;
 
     return TRUE;
+}
+/*************************************************************************************************************************
+ * 函数          :   bool SIMCOM_HTTPS_operations(SIMCOM_HANDLE *pHandle, char *host, int port, char *request, char **response)
+ * 功能          :   SIMCOM 初始化获取短信中心号码以及本机号码,信号强度,CIMI（结果存放在句柄pHandle中）
+ * 参数          :   pHandle:句柄 
+ *                   host:服务器地址 
+ *                   port:服务器端口 
+ *                   request:request数据
+ *                   response:返回的response数据指针
+ * 返回          :   TRUE成功,FALSE:失败 
+ * 依赖          :   底层
+ * 作者          :   seblee
+ * 时间          :   2018-10-18
+ * 最后修改时间  :  2018-10-18
+ * 说明          :   用于网络初始化之后进行https连接访问,需要提前初始化网络模块型号以及网络制式
+*************************************************************************************************************************/
+bool SIMCOM_HTTPS_operations(SIMCOM_HANDLE *pHandle, char *host, int port, char *request, char **response)
+{
+    int err;
+    char sendbuf[200] = {0};
+    char *message = RT_NULL;
+    bool result;
+
+    /*****check 4G state****************/
+    if (pHandle->s_isInitStatus != TRUE)
+    {
+        err = -RT_ERROR;
+        goto exit;
+    }
+    //+CHTTPSSTART: 0
+    result = SIMCOM_COMMAND_ACK(pHandle, "AT+CHTTPSSTART", "OK", "+CHTTPSSTART: ", &err);
+    if (result == TRUE)
+    {
+        at_log("Acquire HTTPS stack err:%d", err);
+        if (err != 0)
+            return FALSE;
+    }
+    else
+    {
+        at_log("Acquire HTTPS stack err");
+        return FALSE;
+    }
+    rt_snprintf(sendbuf, sizeof(sendbuf), "AT+CHTTPSOPSE=\"%s\",%d,2", host, port);
+    //+CHTTPSOPSE: 0
+    result = SIMCOM_COMMAND_ACK(pHandle, sendbuf, "OK", "+CHTTPSOPSE: ", &err);
+    if (result == TRUE)
+    {
+        at_log("CHTTPSOPSE err:%d", err);
+        if (err != 0)
+            return FALSE;
+    }
+    else
+    {
+        at_log("Connect HTTPS server err");
+        return FALSE;
+    }
+    rt_snprintf(sendbuf, sizeof(sendbuf), "AT+CHTTPSSEND=%d", rt_strlen(request));
+    //+CHTTPSOPSE: 0
+    result = SIMCOM_COMMAND_ACK(pHandle, sendbuf, ">", RT_NULL, &err);
+    if (result = TRUE)
+    {
+        at_log("CHTTPSOPSE err:%d", err);
+        if (err != 0)
+            return FALSE;
+    }
+    else
+    {
+        at_log("AT+CHTTPSSEND err");
+        return FALSE;
+    }
+    u32 cnt;
+    char *p;
+    u8 *pData;
+    //+CHTTPSOPSE: 0 Send HTTPS Request
+    pHandle->pSendData((u8 *)request, strlen(request)); //发送数据
+    pHandle->pClearRxData();
+
+    if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 20, 200)) //等待响应,超时200MS
+    {
+        //+CHTTPSSEND: 0
+        p = strstr((const char *)pData, "+CHTTPSSEND: "); //搜索字符"+CHTTPSSEND: "
+        if (p != NULL)                                    //搜索成功
+        {
+            err = GSM_StringToDec(&p[rt_strlen("+CHTTPSSEND: ")], 1);
+            SIMCOM_TestAT(pHandle, 1);
+            if (err == 0)
+            {
+                do
+                {
+                    p = strstr((const char *)pData, "RECV EVENT"); //搜索字符"+CHTTPSSEND: "
+                    if (p != NULL)                                 //搜索成功
+                    {
+                        break;
+                    }
+                    SIMCOM_GetATResp(pHandle, &pData, &cnt, "RECV EVENT", 20, 200)
+
+                } while (retry--);
+            }
+        }
+    }
+    SIMCOM_TestAT(pHandle, 2);
+    return FALSE;
 }
