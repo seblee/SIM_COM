@@ -325,11 +325,11 @@ bool SIMCOM_COMMAND_ACK(SIMCOM_HANDLE *pHandle, const char *AT_command,
     char *p;
     u8 retry = SIMCOM_DEFAULT_RETRY; //重试次数
     u8 *pData;
-
+    *err = -1;
     do
     {
         //+CHTTPSSTART: 0
-        SIMCOM_SendAT(pHandle, AT_command);                                             //发送"AT+CGREG?",获取网络注册状态
+        SIMCOM_SendAT(pHandle, (char *)AT_command);                                     //发送"AT+CGREG?",获取网络注册状态
         pHandle->pClearRxData();                                                        //清除接收计数器
         if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, pKeyword, 20, 200)) //等待响应,超时200MS
         {

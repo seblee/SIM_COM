@@ -37,6 +37,9 @@ bool SIMCOM_Init(SIMCOM_HANDLE *pHandle,
 );
 
 SIMCOM_USER_ERROR SIMCOM_RegisNetwork(SIMCOM_HANDLE *pHandle, u16 Retry, u16 NetworkDelay, const char **pModeInof); //SIMCOM模块上电初始化并注册网络
-bool SIMCOM_PhoneMessageNumberInitialize(SIMCOM_HANDLE *pHandle, u8 retry);                                         //SIMCOM 初始化获取短信中心号码以及本机号码,信号强度,CIMI（结果存放在句柄pHandle中）
+
+bool SIMCOM_PhoneMessageNumberInitialize(SIMCOM_HANDLE *pHandle, u8 retry); //SIMCOM 初始化获取短信中心号码以及本机号码,信号强度,CIMI（结果存放在句柄pHandle中）
+
+bool SIMCOM_HTTPS_operations(SIMCOM_HANDLE *pHandle, char *host, int port, char *request, char **response);
 
 #endif /*_SIMCOM_SUER_H_*/

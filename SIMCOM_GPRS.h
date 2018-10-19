@@ -36,6 +36,8 @@ bool SIMCOM_IPADDR(SIMCOM_HANDLE *pHandle);
 
 bool SIMCOM_CIPNETWORK(SIMCOM_HANDLE *pHandle, bool Transparent_mode, const char *host, int port);
 
+bool SIMCOM_COMMAND_ACK(SIMCOM_HANDLE *pHandle, const char *AT_command,
+                        const char *pKeyword, const char *pParaword, int *err);
 /*----------------------------------------------------------------------------*/
 
 #endif /* SIMCOM_GPRS*/

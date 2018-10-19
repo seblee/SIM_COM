@@ -12,9 +12,10 @@
 //#include "ucos_ii.h"
 #include "SIMCOM_USER.h"
 #include "SIMCOM_GSM.h"
-//#include "SIMCOM_GPRS.h"
+#include "SIMCOM_GPRS.h"
 #include "SIMCOM_AT.h"
 #include "SIMCOM.h"
+#include <stdio.h>
 
 #ifndef DEBUG
 #define DEBUG(N, ...) rt_kprintf("####[DEBUG %s:%4d] " N "\r\n", __FILE__, __LINE__, ##__VA_ARGS__)
@@ -748,86 +749,161 @@ bool SIMCOM_HTTPS_operations(SIMCOM_HANDLE *pHandle, char *host, int port, char 
 {
     int err;
     char sendbuf[200] = {0};
-    char *message = RT_NULL;
     bool result;
+    u32 cnt;
+    char *p;
+    u8 *pData;
+    u8 retry = SIMCOM_DEFAULT_RETRY; //重试次数
+    SIMCOM_SetParametersReturnBool(pHandle, "ATE 0", SIMCOM_DEFAULT_RETRY, 110, "\r\n关闭AT回显模式失败!\r\n");
 
     /*****check 4G state****************/
     if (pHandle->s_isInitStatus != TRUE)
     {
-        err = -RT_ERROR;
+        result = FALSE;
         goto exit;
     }
     //+CHTTPSSTART: 0
     result = SIMCOM_COMMAND_ACK(pHandle, "AT+CHTTPSSTART", "OK", "+CHTTPSSTART: ", &err);
-    if (result == TRUE)
+    DEBUG("+CHTTPSSTART: %d", err);
+    if ((result == FALSE) || ((result == TRUE) && (err != 0)))
     {
-        at_log("Acquire HTTPS stack err:%d", err);
-        if (err != 0)
-            return FALSE;
+        DEBUG("Acquire HTTPS stack err +CHTTPSSTART: %d", err);
+        result = FALSE;
+        goto exit;
     }
-    else
-    {
-        at_log("Acquire HTTPS stack err");
-        return FALSE;
-    }
+    //2.2 Connect HTTPS server
     rt_snprintf(sendbuf, sizeof(sendbuf), "AT+CHTTPSOPSE=\"%s\",%d,2", host, port);
-    //+CHTTPSOPSE: 0
-    result = SIMCOM_COMMAND_ACK(pHandle, sendbuf, "OK", "+CHTTPSOPSE: ", &err);
-    if (result == TRUE)
-    {
-        at_log("CHTTPSOPSE err:%d", err);
-        if (err != 0)
-            return FALSE;
-    }
-    else
-    {
-        at_log("Connect HTTPS server err");
-        return FALSE;
-    }
-    rt_snprintf(sendbuf, sizeof(sendbuf), "AT+CHTTPSSEND=%d", rt_strlen(request));
-    //+CHTTPSOPSE: 0
-    result = SIMCOM_COMMAND_ACK(pHandle, sendbuf, ">", RT_NULL, &err);
-    if (result = TRUE)
-    {
-        at_log("CHTTPSOPSE err:%d", err);
-        if (err != 0)
-            return FALSE;
-    }
-    else
-    {
-        at_log("AT+CHTTPSSEND err");
-        return FALSE;
-    }
-    u32 cnt;
-    char *p;
-    u8 *pData;
-    //+CHTTPSOPSE: 0 Send HTTPS Request
-    pHandle->pSendData((u8 *)request, strlen(request)); //发送数据
+    DEBUG("Connect HTTPS server:%s", sendbuf);
+    SIMCOM_SendAT(pHandle, sendbuf);
     pHandle->pClearRxData();
-
+    //+CHTTPSOPSE: 0
     if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 20, 200)) //等待响应,超时200MS
     {
+        DEBUG("Check connect result");
+        //+CHTTPSOPSE: 0
+        p = strstr((const char *)pData, "+CHTTPSOPSE: "); //搜索字符"+CHTTPSOPSE: "
+        if (p == NULL)
+        {
+            retry = SIMCOM_DEFAULT_RETRY;
+            do
+            {
+                if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "+CHTTPSOPSE: ", 20, 200))
+                    break;
+            } while (retry--);
+        }
+        p = strstr((const char *)pData, "+CHTTPSOPSE: "); //搜索字符"+CHTTPSOPSE: "
+        if (p != NULL)
+            err = GSM_StringToDec(&p[rt_strlen("+CHTTPSOPSE: ")], 1);
+        else
+            err = -1;
+    }
+
+    //+CHTTPSOPSE: 0
+    DEBUG("CHTTPSOPSE err:%d", err);
+    if ((result == FALSE) || ((result == TRUE) && (err != 0)))
+    {
+        DEBUG("Connect HTTPS server +CHTTPSOPSE err:%d", err);
+        result = FALSE;
+        goto exit_release;
+    }
+
+    rt_snprintf(sendbuf, sizeof(sendbuf), "AT+CHTTPSSEND=%d", rt_strlen(request));
+    //+CHTTPSOPSE: 0
+    DEBUG("Send HTTPS Request:%s", sendbuf);
+    result = SIMCOM_COMMAND_ACK(pHandle, sendbuf, ">", RT_NULL, &err);
+    if (result == FALSE)
+    {
+        DEBUG("AT+CHTTPSSEND err");
+        result = FALSE;
+        goto exit_close;
+    }
+
+    //+CHTTPSOPSE: 0 Send HTTPS Request
+    // DEBUG("request:%s", request);
+    pHandle->pClearRxData();
+    pHandle->pSendData((u8 *)request, strlen(request));                         //发送数据
+    if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 20, 200)) //等待响应,超时200MS
+    {
+        DEBUG("pData:%s", pData);
         //+CHTTPSSEND: 0
         p = strstr((const char *)pData, "+CHTTPSSEND: "); //搜索字符"+CHTTPSSEND: "
         if (p != NULL)                                    //搜索成功
         {
-            err = GSM_StringToDec(&p[rt_strlen("+CHTTPSSEND: ")], 1);
-            SIMCOM_TestAT(pHandle, 1);
+            err = GSM_StringToDec(&p[rt_strlen("+CHTTPSSEND: ")], 1); //搜索字符"+CHTTPSOPSE: "
+
             if (err == 0)
             {
-                do
-                {
-                    p = strstr((const char *)pData, "RECV EVENT"); //搜索字符"+CHTTPSSEND: "
-                    if (p != NULL)                                 //搜索成功
-                    {
-                        break;
-                    }
-                    SIMCOM_GetATResp(pHandle, &pData, &cnt, "RECV EVENT", 20, 200)
+                retry = SIMCOM_DEFAULT_RETRY;
 
-                } while (retry--);
+                p = strstr((const char *)pData, "RECV EVENT");
+                if (p == NULL)
+                {
+                    retry = SIMCOM_DEFAULT_RETRY;
+                    do
+                    {
+                        if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "RECV EVENT", 20, 200))
+                            break;
+                    } while (retry--);
+                }
+                p = strstr((const char *)pData, "RECV EVENT"); //搜索字符"RECV EVENT"
+                if (p == NULL)
+                {
+                    result = FALSE;
+                    goto exit_close;
+                }
+            }
+            else
+            {
+                result = FALSE;
+                goto exit_close;
             }
         }
+        else
+        {
+            result = FALSE;
+            goto exit_close;
+        }
     }
+    DEBUG("GET RECV EVENT!!!!");
+
     SIMCOM_TestAT(pHandle, 2);
-    return FALSE;
+
+    //+CHTTPSOPSE: 0 Send HTTPS Request
+    SIMCOM_SendAT(pHandle, "AT+CHTTPSRECV=1000");
+    pHandle->pClearRxData();
+    if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 20, 200)) //等待响应,超时200MS
+    {
+        //+CHTTPSRECV: 0
+        p = strstr((const char *)pData, "+CHTTPSRECV: "); //搜索字符"+CHTTPSOPSE: "
+        if (p != NULL)
+            err = GSM_StringToDec(&p[rt_strlen("+CHTTPSRECV: ")], 1);
+        if (err != 0)
+        {
+            result = FALSE;
+            goto exit_close;
+        }
+
+        p = strstr((const char *)pData, "+CHTTPSRECV: DATA,"); //搜索字符
+        if (p != NULL)                                         //搜索成功
+        {
+            sscanf(p, "+CHTTPSRECV: DATA,%d", &err);
+            *response = rt_calloc(err + 1, sizeof(u8));
+            p = rt_strstr((const char *)pData, "HTTP/1.1"); //搜索字符
+            strncpy(*response, p, err);
+        }
+        else
+        {
+            result = FALSE;
+            goto exit_close;
+        }
+    }
+    DEBUG("*response sucess!!!!!!!!!!!!");
+    SIMCOM_TestAT(pHandle, 2);
+    result = TRUE;
+exit_close:
+    SIMCOM_SetParametersReturnBool(pHandle, "AT+CHTTPSCLSE", SIMCOM_DEFAULT_RETRY, 110, "\r\n关闭AT回显模式失败!\r\n");
+exit_release:
+    SIMCOM_SetParametersReturnBool(pHandle, "AT+CHTTPSSTOP", SIMCOM_DEFAULT_RETRY, 110, "\r\n关闭AT回显模式失败!\r\n");
+exit:
+    return result;
 }
