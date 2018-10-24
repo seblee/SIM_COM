@@ -777,7 +777,7 @@ bool SIMCOM_HTTPS_operations(SIMCOM_HANDLE *pHandle, char *host, int port, char 
     SIMCOM_SendAT(pHandle, sendbuf);
     pHandle->pClearRxData();
     //+CHTTPSOPSE: 0
-    if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 20, 200)) //等待响应,超时200MS
+    if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 20, 500)) //等待响应,超时200MS
     {
         DEBUG("Check connect result");
         //+CHTTPSOPSE: 0
@@ -787,7 +787,7 @@ bool SIMCOM_HTTPS_operations(SIMCOM_HANDLE *pHandle, char *host, int port, char 
             retry = SIMCOM_DEFAULT_RETRY;
             do
             {
-                if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "+CHTTPSOPSE: ", 20, 200))
+                if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "+CHTTPSOPSE: ", 20, 500))
                     break;
             } while (retry--);
         }
@@ -797,10 +797,9 @@ bool SIMCOM_HTTPS_operations(SIMCOM_HANDLE *pHandle, char *host, int port, char 
         else
             err = -1;
     }
-
     //+CHTTPSOPSE: 0
     DEBUG("CHTTPSOPSE err:%d", err);
-    if ((result == FALSE) || ((result == TRUE) && (err != 0)))
+    if (err != 0)
     {
         DEBUG("Connect HTTPS server +CHTTPSOPSE err:%d", err);
         result = FALSE;
@@ -819,7 +818,7 @@ bool SIMCOM_HTTPS_operations(SIMCOM_HANDLE *pHandle, char *host, int port, char 
     }
 
     //+CHTTPSOPSE: 0 Send HTTPS Request
-    // DEBUG("request:%s", request);
+    DEBUG("request:%s", request);
     pHandle->pClearRxData();
     pHandle->pSendData((u8 *)request, strlen(request));                         //发送数据
     if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "OK", 20, 200)) //等待响应,超时200MS
