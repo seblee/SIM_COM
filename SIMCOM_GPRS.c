@@ -62,6 +62,7 @@ bool SIMCOM_CCH(SIMCOM_HANDLE *pHandle, const char *host, int port)
     SIMCOM_NET_log("buff:%s", buff);
     SIMCOM_SendAT(pHandle, buff);
     pHandle->pClearRxData();
+
     //CONNECT 115200
     if (AT_RETURN_OK == SIMCOM_GetATResp(pHandle, &pData, &cnt, "CONNECT", 10, 200)) //等待响应,超时200MS
     {
